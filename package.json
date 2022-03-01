@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "@shardlabs/starknet-hardhat-plugin": "^0.3.11",
+    "hardhat": "^2.8.4"
+  }
+}
