@@ -3,10 +3,14 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.uint256 import (
     Uint256, uint256_le, uint256_mul, uint256_unsigned_div_rem, uint256_add, uint256_sub)
-
+from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 from contracts.IAksPair import IAksPair
 
 from contracts.IAksFactory import IAksFactory
+
+from contracts.lib.utils.constants import TRUE
+
+from contracts.lib.token.IERC20 import IERC20
 
 func getAmountOut{syscall_ptr : felt*, range_check_ptr}(
         amountIn : Uint256, reserveIn : Uint256, reserveOut : Uint256) -> (amountOut : Uint256):
@@ -91,4 +95,21 @@ func sortPair{syscall_ptr : felt*, range_check_ptr}(a : felt, b : felt) -> (
         return (token0=a, token1=b)
     end
     return (token0=b, token1=a)
+end
+
+func swapForTokens{syscall_ptr : felt*, range_check_ptr}(
+        amountIn : Uint256, inToken : felt, outToken : felt, to : felt) -> (amountOut : Uint256):
+    let i = 0
+    let (is_gt_zero) = uint256_le(Uint256(low=0, high=0), amountIn)
+    assert is_gt_zero = 1
+
+    # 获取 币对次Id
+    let (pairId) = IAksFactory.getPair(
+        contract_address=factoryAddress, token0=token0, token1=token1)
+
+    let (amountOut) = getAmountOutForToken(amountIn, inToken, outToken)
+
+    assert TRUE = IERC20.transferFrom(get_caller_address, pairId, amountIn)
+
+    IAksPair.swap(contract_address=pairId, amountIn, amountOut, to)
 end

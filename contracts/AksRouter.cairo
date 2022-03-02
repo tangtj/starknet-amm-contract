@@ -53,6 +53,9 @@ func _getAmountsOut{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         return (r=amount)
     end
 
+    # todo
+    # 转账 swap 操作
+
     let (r) = _getAmountsOut(paths=paths + 1, size=size - 1, amountIn=amount, minOut=minOut)
     return (r)
 end
