@@ -4,7 +4,7 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.uint256 import (
     Uint256, uint256_le, uint256_mul, uint256_unsigned_div_rem, uint256_add, uint256_sub)
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
-
+from starkware.cairo.common.math import assert_lt_felt
 from contracts.lib.token.ERC20_base import (
     ERC20_name, ERC20_symbol, ERC20_totalSupply, ERC20_decimals, ERC20_balanceOf, ERC20_allowance,
     ERC20_initializer, ERC20_approve, ERC20_increaseAllowance, ERC20_decreaseAllowance,
@@ -38,34 +38,21 @@ func swapExactTokensForTokens(
     return ()
 end
 
-# func swapFor(pair:felt,amount0Out,amount1Out) ->():
-# end
-
-# func getAmountsOut{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(path:felt*,amountIn:Uint256,minOut:Uint256) ->(amounts:felt*):
-
-# let (r:felt*) = alloc()
-
-# let (reserve0,reserve1) =  IAksPair.getReserves(contract_address=path)
-
-# return ()
-# end
-
+# 获取最后返回 amount 数量
 func _getAmountsOut{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        paths : felt*, size, amountIn : Uint256, minOut : Uint256, pathAmounts : Uint256*) -> (
-        r : felt):
+        paths : felt*, size, amountIn : Uint256, minOut : Uint256) -> (r : Uint256):
     alloc_locals
-    let i = 1
+    let i = 0
     let n = i + 1
     let in = paths[i]
     let out = paths[n]
 
-    let (local amount) = getAmountInForToken(amountIn, in, out)
-    # 整不会了
-    let ( local v) = alloc()
-    v[0] = &amount
-    #pathAmounts= amount
+    let (amount) = getAmountInForToken(amountIn, in, out)
+    if size - 1 == 1:
+        let (is_le) = uint256_le(a=minOut, b=amount)
+        return (r=amount)
+    end
 
-    let (r) = _getAmountsOut(
-        paths=paths + 1, size=size + 1, amountIn=amountIn, minOut=minOut, pathAmounts=pathAmounts)
+    let (r) = _getAmountsOut(paths=paths + 1, size=size - 1, amountIn=amount, minOut=minOut)
     return (r)
 end
