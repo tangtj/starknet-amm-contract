@@ -15,19 +15,19 @@ from contracts.lib.utils.constants import TRUE
 from contracts.lib.token.IERC20 import IERC20
 
 @storage_var
-func token0_() -> (token0 : felt):
+func _token0() -> (token0 : felt):
 end
 
 @storage_var
-func token1_() -> (token1 : felt):
+func _token1() -> (token1 : felt):
 end
 
 @storage_var
-func reserve0_() -> (reserve0 : Uint256):
+func _reserve0() -> (reserve0 : Uint256):
 end
 
 @storage_var
-func reserve1_() -> (reserve1 : Uint256):
+func _reserve1() -> (reserve1 : Uint256):
 end
 
 @storage_var
@@ -40,9 +40,10 @@ end
 
 @constructor
 func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        token0 : felt, token1 : felt):
-    token0_.write(token0)
-    token1_.write(token1)
+        token0 : felt, token1 : felt,to:felt):
+    _token0.write(token0)
+    _token1.write(token1)
+    ERC20_initializer('AksLP', 'LP', Uint256(low=0,high=0) , to)
     return ()
 end
 
@@ -132,21 +133,21 @@ end
 
 @view
 func token0{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (token0 : felt):
-    let (token0) = token0_.read()
+    let (token0) = _token0.read()
     return (token0)
 end
 
 @view
-func token1{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (token0 : felt):
-    let (token0) = token0_.read()
-    return (token0)
+func token1{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (token1 : felt):
+    let (token1) = _token1.read()
+    return (token1)
 end
 
 @view
 func getReserves{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
         reserve0 : Uint256, reserve1 : Uint256):
-    let (reserve0) = reserve0_.read()
-    let (reserve1) = reserve1_.read()
+    let (reserve0) = _reserve0.read()
+    let (reserve1) = _reserve1.read()
     return (reserve0, reserve1)
 end
 
@@ -161,11 +162,11 @@ func burn{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(to 
     let (local balance : Uint256) = ERC20_balanceOf(account=this)
     let (totalSupply : Uint256) = ERC20_totalSupply()
 
-    let (reserve0) = reserve0_.read()
-    let (reserve1) = reserve1_.read()
+    let (reserve0) = _reserve0.read()
+    let (reserve1) = _reserve1.read()
 
-    let (token0) = token0_.read()
-    let (token1) = token1_.read()
+    let (token0) = _token0.read()
+    let (token1) = _token1.read()
 
     # 判断 调用者到底有没有钱
     let (is_le) = uint256_le(balance, Uint256(low=0, high=0))
@@ -199,11 +200,11 @@ func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(to 
 
     let (totalSupply : Uint256) = ERC20_totalSupply()
 
-    let (token0) = token0_.read()
-    let (token1) = token1_.read()
+    let (token0) = _token0.read()
+    let (token1) = _token1.read()
 
-    let (reserve0) = reserve0_.read()
-    let (reserve1) = reserve1_.read()
+    let (reserve0) = _reserve0.read()
+    let (reserve1) = _reserve1.read()
 
     let (amount0) = IERC20.balanceOf(contract_address=token0, account=this)
     let (amount1) = IERC20.balanceOf(contract_address=token1, account=this)
@@ -233,11 +234,11 @@ func swap{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
 
     let (totalSupply : Uint256) = ERC20_totalSupply()
 
-    let (token0) = token0_.read()
-    let (token1) = token1_.read()
+    let (token0) = _token0.read()
+    let (token1) = _token1.read()
 
-    let (reserve0) = reserve0_.read()
-    let (reserve1) = reserve1_.read()
+    let (reserve0) = _reserve0.read()
+    let (reserve1) = _reserve1.read()
 
     let (amount0) = IERC20.balanceOf(contract_address=token0, account=this)
     let (amount1) = IERC20.balanceOf(contract_address=token1, account=this)
@@ -287,7 +288,7 @@ func min{range_check_ptr}(a : Uint256, b : Uint256) -> (min : Uint256):
     end
 end
 
-func man{range_check_ptr}(a : Uint256, b : Uint256) -> (min : Uint256):
+func max{range_check_ptr}(a : Uint256, b : Uint256) -> (min : Uint256):
     let (is_le) = uint256_le(a, b)
     if is_le == 0:
         return (b)
@@ -296,7 +297,8 @@ func man{range_check_ptr}(a : Uint256, b : Uint256) -> (min : Uint256):
     end
 end
 
-func _safeTransfer{syscall_ptr : felt*,range_check_ptr}(token : felt, to : felt, value : Uint256) -> ():
-    IERC20.transfer(contract_address=token,recipient= to,amount= value)
+func _safeTransfer{syscall_ptr : felt*, range_check_ptr}(
+        token : felt, to : felt, value : Uint256) -> ():
+    IERC20.transfer(contract_address=token, recipient=to, amount=value)
     return ()
 end

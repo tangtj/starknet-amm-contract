@@ -20,7 +20,7 @@ from contracts.IAksFactory import IAksFactory
 
 from starkware.cairo.common.alloc import alloc
 
-from contracts.AksLibrary import sortPair, getAmountInForToken, getAmountOutForToken
+from contracts.AksLibrary import sortPair, getAmountInForToken, getAmountOutForToken, swapForToken
 
 # 指定具体的获得token，限定最大输入token
 # path 改成 pair id , pair id 由链下能力支持，是在不知道怎么弄了这样也是没办法
@@ -33,21 +33,22 @@ func swapTokensForExactTokens(
 end
 
 # 指定具体的获得token，限定最大输入token
-func swapExactTokensForTokens(
-        amountIn : Uint256, amountOutMax : Uint256, path : felt*, size : felt, to : felt) -> ():
+func swapExactTokensForTokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        amountIn : Uint256, amountOutMin : Uint256, path : felt*, size : felt, to : felt) -> ():
+    _swap(path,size,amountIn,amountOutMin,to)
     return ()
 end
 
 # 获取最后返回 amount 数量
-func _getAmountsOut{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        paths : felt*, size, amountIn : Uint256, minOut : Uint256) -> (r : Uint256):
+func _swap{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        paths : felt*, size, amountIn : Uint256, minOut : Uint256,to:felt) -> (r : Uint256):
     alloc_locals
     let i = 0
     let n = i + 1
     let in = paths[i]
     let out = paths[n]
 
-    let (amount) = getAmountInForToken(amountIn, in, out)
+    let (amount) = getAmountOutForToken(amountIn, in, out)
     if size - 1 == 1:
         let (is_le) = uint256_le(a=minOut, b=amount)
         return (r=amount)
@@ -55,7 +56,9 @@ func _getAmountsOut{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     # todo
     # 转账 swap 操作
+    let (to) = get_caller_address()
+    swapForToken(amountIn, in, out, to)
 
-    let (r) = _getAmountsOut(paths=paths + 1, size=size - 1, amountIn=amount, minOut=minOut)
+    let (r) = _swap(paths=paths + 1, size=size - 1, amountIn=amount, minOut=minOut,to=to)
     return (r)
 end

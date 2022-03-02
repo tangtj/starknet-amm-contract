@@ -12,6 +12,8 @@ from contracts.lib.utils.constants import TRUE
 
 from contracts.lib.token.IERC20 import IERC20
 
+const factoryAddress = 1
+
 func getAmountOut{syscall_ptr : felt*, range_check_ptr}(
         amountIn : Uint256, reserveIn : Uint256, reserveOut : Uint256) -> (amountOut : Uint256):
     # require(amountIn > 0, 'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT');
@@ -97,19 +99,26 @@ func sortPair{syscall_ptr : felt*, range_check_ptr}(a : felt, b : felt) -> (
     return (token0=b, token1=a)
 end
 
-func swapForTokens{syscall_ptr : felt*, range_check_ptr}(
+func swapForToken{syscall_ptr : felt*, range_check_ptr}(
         amountIn : Uint256, inToken : felt, outToken : felt, to : felt) -> (amountOut : Uint256):
+    alloc_locals
     let i = 0
     let (is_gt_zero) = uint256_le(Uint256(low=0, high=0), amountIn)
     assert is_gt_zero = 1
 
+    let (token0, token1) = sortPair(inToken, outToken)
     # 获取 币对次Id
     let (pairId) = IAksFactory.getPair(
         contract_address=factoryAddress, token0=token0, token1=token1)
 
     let (amountOut) = getAmountOutForToken(amountIn, inToken, outToken)
 
-    assert TRUE = IERC20.transferFrom(get_caller_address, pairId, amountIn)
+    let (f) = get_caller_address()
 
-    IAksPair.swap(contract_address=pairId, amountIn, amountOut, to)
+    let (result) = IERC20.transferFrom(
+        contract_address=inToken, sender=f, recipient=pairId, amount=amountIn)
+    assert TRUE = result
+
+    IAksPair.swap(contract_address=pairId, amount0Out=amountIn, amount1Out=amountOut, to=to)
+    return (amountOut=amountOut)
 end

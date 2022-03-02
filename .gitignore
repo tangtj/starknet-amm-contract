@@ -2,3 +2,5 @@ node_modules
 localhost.deployments.txt
 cache
 starknet-artifacts
+artifacts
+tests/__pycache__
