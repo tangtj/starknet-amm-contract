@@ -4,6 +4,7 @@ from unittest import result
 import pytest
 from starkware.starknet.testing.starknet import Starknet
 from starkware.starknet.testing.contract import StarknetContract
+from sympy import false
 
 # The path to the contract source code.
 CONTRACT_FILE = os.path.join("contracts", "AkSwap.cairo")
@@ -63,3 +64,19 @@ async def test_get_pair():
     r2 = await contract.getPoolId(3,2).call()
     assert r.result == (1,)
     assert r2.result == (2,)
+
+# @pytest.mark.asyncio
+# async def test_get_pool():
+    
+#     starknet = await Starknet.empty()
+#     # Deploy the contract.
+#     contract = await starknet.deploy(
+#         source=CONTRACT_FILE,
+#     )
+
+#     await contract.addPool(1,2).invoke()
+#     await contract.addPool(2,3).invoke()
+
+#     # Check the result of get_balance().
+#     r = await contract.getPool(1).call()
+#     assert r.result.token0 == 1
