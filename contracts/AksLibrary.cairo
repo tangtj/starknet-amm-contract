@@ -5,7 +5,7 @@ from starkware.cairo.common.uint256 import (
     Uint256, uint256_le, uint256_mul, uint256_unsigned_div_rem, uint256_add, uint256_sub)
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 from contracts.IAksPair import IAksPair
-
+from starkware.cairo.common.math_cmp import is_le
 from contracts.IAksFactory import IAksFactory
 
 from contracts.lib.utils.constants import TRUE
@@ -86,17 +86,12 @@ func getAmountIn{syscall_ptr : felt*, range_check_ptr}(
     return (amountIn=result)
 end
 
-func sortPair{syscall_ptr : felt*, range_check_ptr}(a : felt, b : felt) -> (
-        token0 : felt, token1 : felt):
-    tempvar d = a - b
-    tempvar r = (d) * (-1)
-
-    # 如果 a < b 则  (a-b)<0 为负数  r = a * -1 为正数 则 d != r
-    if r == d:
-        # a > b
-        return (token0=a, token1=b)
+func sortPair{range_check_ptr}(a : felt, b : felt) -> (a : felt, b : felt):
+    let (r) = is_le(a = a,b = b - 1)
+    if r == 1:
+        return (a, b)
     end
-    return (token0=b, token1=a)
+    return (b, a)
 end
 
 func swapForToken{syscall_ptr : felt*, range_check_ptr}(

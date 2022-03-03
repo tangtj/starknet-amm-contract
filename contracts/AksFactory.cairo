@@ -14,20 +14,32 @@ from contracts.lib.utils.constants import TRUE
 
 from contracts.lib.token.IERC20 import IERC20
 
-
 struct _tokenPair:
     member token0 : felt
     member token1 : felt
 end
 
 @storage_var
-func _pairs(pair:_tokenPair)->(res : felt):
+func _pairs(pair : _tokenPair) -> (res : felt):
 end
 
 @view
-func getPair{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(token0:felt,token1:felt) -> (address:felt):
+func getPair{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+        token0 : felt, token1 : felt) -> (address : felt):
     let pair = _tokenPair(token0=token0, token1=token1)
 
-    let (address) =  _pairs.read(pair)
-    return (address = address)
+    let (address) = _pairs.read(pair)
+    return (address=address)
+end
+
+@view
+func addPair(token0 : felt, token1 : felt, pair : felt) -> ():
+    let (t0, t1) = sortPair(token0, token1)
+    let pair = _tokenPair(token0=t0, token1=t1)
+
+    let (address) = _pairs.read(pair)
+    if address == 0:
+        _pairs.write(pair, pair)
+    end
+    return ()
 end
